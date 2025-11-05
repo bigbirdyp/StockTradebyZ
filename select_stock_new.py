@@ -164,11 +164,7 @@ def main():
     trade_date = (
         pd.to_datetime(args.date)
         if args.date
-        else max(
-            df["date"].dropna().max() 
-            for df in data.values() 
-            if not df.empty and not df["date"].dropna().empty
-        )
+        else max(df["date"].max() for df in data.values())
     )
     if not args.date:
         logger.info("未指定 --date，使用最近日期 %s", trade_date.date())
