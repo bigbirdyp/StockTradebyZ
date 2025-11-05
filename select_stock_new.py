@@ -89,6 +89,28 @@ def instantiate_selector(cfg: Dict[str, Any]):
     params = cfg.get("params", {})
     return cfg.get("alias", cls_name), cls(**params)
 
+def add_stock_suffix(code: str) -> str:
+    """
+    根据股票代码添加交易所后缀
+    
+    Args:
+        code: 股票代码（6位数字）
+    
+    Returns:
+        str: 添加后缀后的股票代码
+    """
+    
+    # 检查是否为6位数字
+    if re.match(r'^\d{6}$', code):
+        if code.startswith('6'):
+            return f"{code}.SH"
+        elif code.startswith('0') or code.startswith('3'):
+            return f"{code}.SZ"
+        elif code.startswith('9'):
+            return f"{code}.BJ"
+    
+    # 如果不是6位数字，返回原代码
+    return code
 
 def save_selection_results_to_excel(
     picks: List[str], 
@@ -126,7 +148,7 @@ def save_selection_results_to_excel(
     excel_file_path = output_dir_path / excel_filename
     
     # 为股票代码添加后缀
-    picks_with_suffix = picks
+    picks_with_suffix = [add_stock_suffix(code) for code in picks]
     
     # 获取股票基本信息
     stock_info_df = get_stock_info_cache()
