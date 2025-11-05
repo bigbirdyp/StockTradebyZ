@@ -11,6 +11,20 @@ import datetime
 
 import pandas as pd
 
+from ts_client import get_stock_basic_info
+
+
+# 缓存股票基本信息
+_stock_info_cache = None
+
+def get_stock_info_cache() -> pd.DataFrame:
+    """获取缓存的股票信息"""
+    global _stock_info_cache
+    if _stock_info_cache is None:
+        _stock_info_cache = get_stock_basic_info()
+    return _stock_info_cache
+
+
 # ---------- 日志 ----------
 logging.basicConfig(
     level=logging.INFO,
@@ -111,11 +125,41 @@ def save_selection_results_to_excel(
     excel_filename = f"{safe_alias}_{date_str}.xlsx"
     excel_file_path = output_dir_path / excel_filename
     
-
+    # 为股票代码添加后缀
+    picks_with_suffix = picks
+    
+    # 获取股票基本信息
+    stock_info_df = get_stock_info_cache()
+    
     # 创建结果数据
     result_data = {
-        'ts_code': picks
+        'ts_code': picks_with_suffix
     }
+    
+    # 添加股票名称、地区、行业信息
+    names = []
+    areas = []
+    industries = []
+    
+    for ts_code in picks_with_suffix:
+        if not stock_info_df.empty:
+            stock_info = stock_info_df[stock_info_df['ts_code'] == ts_code]
+            if not stock_info.empty:
+                names.append(stock_info.iloc[0]['name'])
+                areas.append(stock_info.iloc[0]['area'])
+                industries.append(stock_info.iloc[0]['industry'])
+            else:
+                names.append('')
+                areas.append('')
+                industries.append('')
+        else:
+            names.append('')
+            areas.append('')
+            industries.append('')
+    
+    result_data['name'] = names
+    result_data['area'] = areas
+    result_data['industry'] = industries
     
     result_df = pd.DataFrame(result_data)
     
@@ -127,7 +171,6 @@ def save_selection_results_to_excel(
     except Exception as e:
         logger.error("保存Excel文件失败: %s", e)
         return None
-
 # ---------- 主函数 ----------
 
 def main():

@@ -332,6 +332,7 @@ def main():
             logger.error("跳过配置 %s：%s", cfg, e)
             continue
 
+        logger.info("开始执行 %s %s", trade_date.date(), alias)
         picks = selector.select(trade_date, data)
 
         # 将结果写入日志，同时输出到控制台
