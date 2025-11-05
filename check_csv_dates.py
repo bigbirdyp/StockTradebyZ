@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 """
 检查CSV文件中date列为空的情况
+只显示有空值或问题的文件，正常文件自动跳过
 
 用法:
     python check_csv_dates.py --data-dir ./data/
-    python check_csv_dates.py --data-dir ./data/ --verbose
 """
 
 import argparse
@@ -70,13 +70,12 @@ def check_csv_date_column(csv_file: Path) -> Tuple[bool, dict]:
         }
 
 
-def check_folder(data_dir: Path, verbose: bool = False) -> dict:
+def check_folder(data_dir: Path) -> dict:
     """
     检查文件夹中所有CSV文件的date列
     
     Args:
         data_dir: 数据文件夹路径
-        verbose: 是否显示详细信息
         
     Returns:
         统计结果字典
@@ -112,7 +111,7 @@ def check_folder(data_dir: Path, verbose: bool = False) -> dict:
                 **info
             })
             
-            # 显示问题文件信息
+            # 只打印有问题文件的信息
             print(f"❌ {csv_file.name}")
             if info.get("error"):
                 print(f"   错误: {info['error']}")
@@ -124,9 +123,8 @@ def check_folder(data_dir: Path, verbose: bool = False) -> dict:
                 print(f"   空值比例: {info['null_percentage']}%")
             print()
         else:
+            # 正常文件直接跳过，不打印
             ok_count += 1
-            if verbose:
-                print(f"✓ {csv_file.name} - 正常 (总行数: {info['total_rows']})")
     
     # 打印汇总信息
     print("=" * 60)
@@ -135,15 +133,6 @@ def check_folder(data_dir: Path, verbose: bool = False) -> dict:
     print(f"正常文件: {ok_count}")
     print(f"问题文件: {len(problematic_files)}")
     print("=" * 60)
-    
-    if problematic_files:
-        print("\n问题文件列表:")
-        for item in problematic_files:
-            print(f"  - {item['file']}")
-            if item.get("null_count") is not None:
-                print(f"    空值: {item['null_count']}/{item['total_rows']} ({item['null_percentage']}%)")
-            elif item.get("error"):
-                print(f"    错误: {item['error']}")
     
     return {
         "total_files": len(csv_files),
@@ -155,12 +144,11 @@ def check_folder(data_dir: Path, verbose: bool = False) -> dict:
 def main():
     """主函数"""
     parser = argparse.ArgumentParser(
-        description="检查CSV文件中date列为空的情况",
+        description="检查CSV文件中date列为空的情况（只显示有问题文件）",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例:
   python check_csv_dates.py --data-dir ./data/
-  python check_csv_dates.py --data-dir ./data/ --verbose
         """
     )
     parser.add_argument(
@@ -169,16 +157,11 @@ def main():
         required=True,
         help="包含CSV文件的文件夹路径"
     )
-    parser.add_argument(
-        "--verbose",
-        action="store_true",
-        help="显示所有文件的检查结果（包括正常文件）"
-    )
     
     args = parser.parse_args()
     
     data_dir = Path(args.data_dir)
-    check_folder(data_dir, verbose=args.verbose)
+    check_folder(data_dir)
 
 
 if __name__ == "__main__":
